@@ -22,6 +22,39 @@
     "ISFVSN": "2"
 }*/
 
+// Constants and functions from LYGIA <https://github.com/patriciogonzalezvivo/lygia>
+#define PI 3.1415926535897932384626433832795
+
+// https://github.com/patriciogonzalezvivo/lygia/blob/main/math/rotate2d.glsl
+mat2 rotate2d(const in float r) {
+    float c = cos(r);
+    float s = sin(r);
+    return mat2(c, s, -s, c);
+}
+
+// https://github.com/patriciogonzalezvivo/lygia/blob/main/sdf/sphereSDF.glsl
+float sphereSDF(vec3 p) { return length(p); }
+float sphereSDF(vec3 p, float s) { return sphereSDF(p) - s; }
+
+// https://github.com/patriciogonzalezvivo/lygia/blob/main/space/lookAt.glsl
+#define LOOK_AT_RIGHT_HANDED
+mat3 lookAt(vec3 forward, vec3 up) {
+    vec3 zaxis = normalize(forward);
+#if defined(LOOK_AT_RIGHT_HANDED)
+    vec3 xaxis = normalize(cross(zaxis, up));
+    vec3 yaxis = cross(xaxis, zaxis);
+#else
+    vec3 xaxis = normalize(cross(up, zaxis));
+    vec3 yaxis = cross(zaxis, xaxis);
+#endif
+    return mat3(xaxis, yaxis, zaxis);
+}
+
+mat3 lookAt(vec3 eye, vec3 target, vec3 up) {
+    vec3 forward = normalize(target - eye);
+    return lookAt(forward, up);
+}
+
 // Weird endless living creature
 // inspired by Inigo Quilez live stream shader deconstruction
 // Leon Denise (ponk) 2019.08.28
@@ -44,18 +77,14 @@ const float falloff = 1.2;
 const float motion_frames = 1.;
 
 // toolbox
-const float PI = 3.1415;
 #define repeat(p,r) (mod(p,r)-r/2.)
 float random(vec2 p) { return fract(1e4 * sin(17.0 * p.x + p.y * 0.1) * (0.1 + abs(sin(p.y * 13.0 + p.x)))); }
-mat2 rot(float a) { float c=cos(a),s=sin(a); return mat2(c,-s,s,c); }
-float smoothmin (float a, float b, float r) { float h = clamp(.5+.5*(b-a)/r, 0., 1.); return mix(b, a, h)-r*h*(1.-h); }
-float sdSphere (vec3 p, float r) { return length(p)-r; }
-vec3 look (vec3 eye, vec3 target, vec2 anchor, float fov) {
-    vec3 forward = normalize(target-eye);
-    vec3 right = normalize(cross(forward, vec3(0,1,0)));
-    vec3 up = normalize(cross(right, forward));
-    return normalize(forward * fov + right * anchor.x + up * anchor.y);
+
+mat2 rotate2dCounterclockwise(const in float r) {
+    return rotate2d(-r);
 }
+
+float smoothmin (float a, float b, float r) { float h = clamp(.5+.5*(b-a)/r, 0., 1.); return mix(b, a, h)-r*h*(1.-h); }
 
 float geometry (vec3 pos, float time) {
     float scene = 1., a = 1.;
@@ -64,9 +93,9 @@ float geometry (vec3 pos, float time) {
     pos.x = repeat(pos.x+TIME, 5.);
     for (int i = count; i > 0; --i) {
         pos.x = abs(pos.x)-range*a;
-        pos.xy *= rot(cos(t)*balance/a+a*2.);
-        pos.zy *= rot(sin(t)*balance/a+a*2.);
-        scene = smoothmin(scene, sdSphere(pos,(radius*a)), blend*a);
+        pos.xy *= rotate2dCounterclockwise(cos(t)*balance/a+a*2.);
+        pos.zy *= rotate2dCounterclockwise(sin(t)*balance/a+a*2.);
+        scene = smoothmin(scene, sphereSDF(pos,(radius*a)), blend*a);
         a /= falloff;
     }
     return scene;
@@ -89,8 +118,8 @@ float raymarch ( vec3 eye, vec3 ray, float time, out float total ) {
 
 vec3 camera (vec3 eye) {
     if (enableMouse) {
-        eye.yz *= rot(mouse.y*PI);
-        eye.xz *= rot(mouse.x*PI);
+        eye.yz *= rotate2dCounterclockwise(mouse.y*PI);
+        eye.xz *= rotate2dCounterclockwise(mouse.x*PI);
     }
     return eye;
 }
@@ -99,7 +128,9 @@ void main()
 {
     vec2 uv = 2.*(gl_FragCoord.xy-0.5*RENDERSIZE)/RENDERSIZE.y;
     vec3 eye = camera(vec3(0,0,4));
-    vec3 ray = look(eye, vec3(0), uv, 1.);
+    mat3 lookMatrix = lookAt(eye, vec3(0), vec3(0, 1, 0));
+    vec3 ray = normalize(lookMatrix[2] + lookMatrix[0] * uv.x + lookMatrix[1] * uv.y);
+
     float total = 0.0;
     gl_FragColor = vec4(0);
     for (float index = motion_frames; index > 0.; --index) {
