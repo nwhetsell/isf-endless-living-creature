@@ -22,9 +22,6 @@
     "ISFVSN": "2"
 }*/
 
-#define iResolution RENDERSIZE
-#define iTime TIME
-
 // Weird endless living creature
 // inspired by Inigo Quilez live stream shader deconstruction
 // Leon Denise (ponk) 2019.08.28
@@ -64,7 +61,7 @@ float geometry (vec3 pos, float time) {
     float scene = 1., a = 1.;
     float t = time * .5 + pos.x / 30.;
     t = floor(t)+smoothstep(0.0,.9,pow(fract(t),2.));
-    pos.x = repeat(pos.x+iTime, 5.);
+    pos.x = repeat(pos.x+TIME, 5.);
     for (int i = count; i > 0; --i) {
         pos.x = abs(pos.x)-range*a;
         pos.xy *= rot(cos(t)*balance/a+a*2.);
@@ -100,14 +97,14 @@ vec3 camera (vec3 eye) {
 
 void main()
 {
-    vec2 uv = 2.*(gl_FragCoord.xy-0.5*iResolution.xy)/iResolution.y;
+    vec2 uv = 2.*(gl_FragCoord.xy-0.5*RENDERSIZE)/RENDERSIZE.y;
     vec3 eye = camera(vec3(0,0,4));
     vec3 ray = look(eye, vec3(0), uv, 1.);
     float total = 0.0;
     gl_FragColor = vec4(0);
     for (float index = motion_frames; index > 0.; --index) {
-        float dither = random(ray.xy+fract(iTime+index));
-        float time = iTime*speed+(dither+index)/10./motion_frames;
+        float dither = random(ray.xy+fract(TIME+index));
+        float time = TIME*speed+(dither+index)/10./motion_frames;
         gl_FragColor += vec4(raymarch(eye, ray, time, total))/motion_frames;
     }
 
