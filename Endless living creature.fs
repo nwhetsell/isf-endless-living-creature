@@ -116,5 +116,7 @@ void main()
     float d = smoothstep(7.,0.,total);
     gl_FragColor.rgb += vec3(0.8,.6,.5) * d;
 
-    gl_FragColor.a = 1.;
+    if (any(greaterThan(gl_FragColor.rgb, vec3(0)))) {
+        gl_FragColor.a = 1.;
+    }
 }
