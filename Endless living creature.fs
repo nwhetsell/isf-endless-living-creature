@@ -6,6 +6,62 @@
     "DESCRIPTION": "Weird endless living creature, converted from <https://www.shadertoy.com/view/tljXWy>",
     "INPUTS": [
         {
+            "NAME": "sphereCount",
+            "LABEL": "Sphere count",
+            "TYPE": "float",
+            "DEFAULT": 15,
+            "MAX": 100,
+            "MIN": 1
+        },
+        {
+            "NAME": "speed",
+            "LABEL": "Speed",
+            "TYPE": "float",
+            "DEFAULT": 1,
+            "MAX": 10,
+            "MIN": 0
+        },
+        {
+            "NAME": "balance",
+            "LABEL": "Balance",
+            "TYPE": "float",
+            "DEFAULT": 1.5,
+            "MAX": 10,
+            "MIN": 0
+        },
+        {
+            "NAME": "range",
+            "LABEL": "Range",
+            "TYPE": "float",
+            "DEFAULT": 1.4,
+            "MAX": 10,
+            "MIN": 0
+        },
+        {
+            "NAME": "radius",
+            "LABEL": "Radius",
+            "TYPE": "float",
+            "DEFAULT": 0.6,
+            "MAX": 10,
+            "MIN": 0
+        },
+        {
+            "NAME": "blend",
+            "LABEL": "Blend",
+            "TYPE": "float",
+            "DEFAULT": 0.3,
+            "MAX": 10,
+            "MIN": 0
+        },
+        {
+            "NAME": "falloff",
+            "LABEL": "Fall-off",
+            "TYPE": "float",
+            "DEFAULT": 1.2,
+            "MAX": 10,
+            "MIN": 0
+        },
+        {
             "NAME": "enableMouse",
             "LABEL": "Enable mouse",
             "TYPE": "bool",
@@ -17,6 +73,14 @@
             "DEFAULT": [0, 0],
             "MIN": [-1, -1],
             "MAX": [1, 1]
+        },
+        {
+            "NAME": "motion_frames",
+            "LABEL": "Motion frames",
+            "TYPE": "float",
+            "DEFAULT": 1,
+            "MAX": 10,
+            "MIN": 1
         }
     ],
     "ISFVSN": "2"
@@ -64,18 +128,6 @@ mat3 lookAt(vec3 eye, vec3 target, vec3 up) {
 // Inigo Quilez
 // Morgan McGuire
 
-// tweak zone
-const int count = 15;
-const float speed = 1.;
-const float balance = 1.5;
-const float range = 1.4;
-const float radius = .6;
-const float blend = .3;
-const float falloff = 1.2;
-
-// increment it at your own GPU risk
-const float motion_frames = 1.;
-
 // toolbox
 #define repeat(p,r) (mod(p,r)-r/2.)
 float random(vec2 p) { return fract(1e4 * sin(17.0 * p.x + p.y * 0.1) * (0.1 + abs(sin(p.y * 13.0 + p.x)))); }
@@ -91,7 +143,7 @@ float geometry (vec3 pos, float time) {
     float t = time * .5 + pos.x / 30.;
     t = floor(t)+smoothstep(0.0,.9,pow(fract(t),2.));
     pos.x = repeat(pos.x+TIME, 5.);
-    for (int i = count; i > 0; --i) {
+    for (int i = int(sphereCount); i > 0; --i) {
         pos.x = abs(pos.x)-range*a;
         pos.xy *= rotate2dCounterclockwise(cos(t)*balance/a+a*2.);
         pos.zy *= rotate2dCounterclockwise(sin(t)*balance/a+a*2.);
