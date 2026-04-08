@@ -22,6 +22,14 @@
             "MIN": 0
         },
         {
+            "NAME": "scrollSpeed",
+            "LABEL": "Scroll speed",
+            "TYPE": "float",
+            "DEFAULT": 1,
+            "MAX": 2,
+            "MIN": 0
+        },
+        {
             "NAME": "balance",
             "LABEL": "Balance",
             "TYPE": "float",
