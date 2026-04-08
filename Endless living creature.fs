@@ -150,8 +150,14 @@ float geometry (vec3 pos, float time) {
     float scene = 1., a = 1.;
     float t = time * .5 + pos.x / 30.;
     t = floor(t)+smoothstep(0.0,.9,pow(fract(t),2.));
-    pos.x = repeat(pos.x+TIME, 5.);
-    for (int i = int(sphereCount); i > 0; --i) {
+    pos.x = repeat(pos.x+TIME*scrollSpeed, 5.);
+    for (int i =
+#ifdef VIDEOSYNC
+            int(sphereCount)
+#else
+            15
+#endif
+                            ; i > 0; --i) {
         pos.x = abs(pos.x)-range*a;
         pos.xy *= rotate2dCounterclockwise(cos(t)*balance/a+a*2.);
         pos.zy *= rotate2dCounterclockwise(sin(t)*balance/a+a*2.);
@@ -193,7 +199,13 @@ void main()
 
     float total = 0.0;
     gl_FragColor = vec4(0);
-    for (float index = motion_frames; index > 0.; --index) {
+    for (float index =
+#ifdef VIDEOSYNC
+                       motion_frames
+#else
+                       1.
+#endif
+                                    ; index > 0.; --index) {
         float dither = random(ray.xy+fract(TIME+index));
         float time = TIME*speed+(dither+index)/10./motion_frames;
         gl_FragColor += vec4(raymarch(eye, ray, time, total))/motion_frames;
